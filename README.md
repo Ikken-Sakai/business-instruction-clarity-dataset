@@ -531,8 +531,8 @@ python check_dataset.py
 ### 推奨される引用方法
 
 ```
-ビジネス指示文 曖昧性判定データセット (2024)
-GitHub: https://github.com/[your-username]/[repository-name]
+ビジネス指示文 曖昧性判定データセット (2025)
+GitHub: https://github.com/Ikken-Sakai/business-instruction-clarity-dataset
 ```
 
 ### 倫理的配慮
@@ -599,7 +599,7 @@ with open('train.jsonl', 'r', encoding='utf-8') as f:
 
 ## 更新履歴
 
-- **2024-11-28**: 初版リリース（v1.0.0）
+- **2025-11-28**: 初版リリース（v1.0.0）
   - 2,000件のデータセット作成
   - 学習/検証/テスト分割（80/10/10）
   - 判定ルール・アノテーション基準の確立
