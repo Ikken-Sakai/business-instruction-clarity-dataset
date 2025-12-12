@@ -22,40 +22,68 @@ wheels/
 
 # Virtual Environment
 venv/
-env/
 ENV/
-.venv
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
+env/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Model files
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# MacOS
+.DS_Store
+
+# ========================================
+# 大きなモデルファイル（GitHubにプッシュしない）
+# ========================================
+
+# 学習済みモデル（数百MB〜数GB）
+saved_model/
+saved_model_v1/
+saved_model_v2/
 *.bin
 *.pth
 *.pt
 *.ckpt
+*.safetensors
+
+# 学習ログ・結果
 results/
-checkpoints/
-models/
-runs/
-
-# Logs
-*.log
+results_v2/
 logs/
+logs_v2/
+runs/
+tensorboard/
 
-# Temporary files
-tmp/
-temp/
+# キャッシュ
+.cache/
+*.cache
+transformers_cache/
+
+# 一時ファイル
 *.tmp
+*.temp
+temp/
+tmp/
 
-# OS
-Thumbs.db
+# ========================================
+# 小規模テストデータ（必要に応じて除外）
+# ========================================
+train_small.jsonl
+val_small.jsonl
+test_small.jsonl
 
+# ========================================
+# その他
+# ========================================
+# プレゼンテーションの作業ファイル
+~$*.pptx
+~$*.docx
+
+# バックアップファイル
+*.bak
+*~
