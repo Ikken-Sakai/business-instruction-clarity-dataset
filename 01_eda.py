@@ -7,10 +7,14 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import japanize_matplotlib
 from collections import Counter
 from transformers import BertJapaneseTokenizer
 import os
+
+# 日本語フォント設定
+plt.rcParams['font.family'] = 'Noto Sans CJK JP'
+plt.rcParams['font.sans-serif'] = ['Noto Sans CJK JP', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False  # マイナス記号の文字化け対策
 
 # Seabornのスタイル設定
 sns.set_style("whitegrid")
