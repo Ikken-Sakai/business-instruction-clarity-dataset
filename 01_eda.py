@@ -11,14 +11,10 @@ from collections import Counter
 from transformers import BertJapaneseTokenizer
 import os
 
-# 日本語フォント設定
-plt.rcParams['font.family'] = 'Noto Sans CJK JP'
-plt.rcParams['font.sans-serif'] = ['Noto Sans CJK JP', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False  # マイナス記号の文字化け対策
-
 # Seabornのスタイル設定
 sns.set_style("whitegrid")
 plt.rcParams['figure.figsize'] = (12, 6)
+plt.rcParams['font.family'] = 'DejaVu Sans'
 
 # figuresフォルダの作成
 os.makedirs('figures', exist_ok=True)
@@ -55,12 +51,12 @@ def plot_label_distribution(data_dict):
         
         ax = axes[idx]
         colors = ['#4CAF50', '#FF9800']
-        bars = ax.bar(['明確 (Label 0)', '曖昧 (Label 1)'], 
+        bars = ax.bar(['Clear (Label 0)', 'Ambiguous (Label 1)'], 
                       [label_counts[0], label_counts[1]],
                       color=colors, alpha=0.8)
         
-        ax.set_ylabel('サンプル数', fontsize=12)
-        ax.set_title(f'{name.capitalize()} データセット\n(総数: {len(data)}件)', 
+        ax.set_ylabel('Number of Samples', fontsize=12)
+        ax.set_title(f'{name.capitalize()} Dataset\n(Total: {len(data)} samples)', 
                     fontsize=14, fontweight='bold')
         ax.grid(axis='y', alpha=0.3)
         
@@ -118,21 +114,21 @@ def analyze_text_length(data_dict):
     ax1 = axes[0, 0]
     for name, lengths in all_lengths.items():
         ax1.hist(lengths, bins=20, alpha=0.6, label=name.capitalize(), edgecolor='black')
-    ax1.set_xlabel('文字数', fontsize=12)
-    ax1.set_ylabel('頻度', fontsize=12)
-    ax1.set_title('データセット別 文字数分布', fontsize=14, fontweight='bold')
+    ax1.set_xlabel('Text Length (characters)', fontsize=12)
+    ax1.set_ylabel('Frequency', fontsize=12)
+    ax1.set_title('Text Length Distribution by Dataset', fontsize=14, fontweight='bold')
     ax1.legend()
     ax1.grid(axis='y', alpha=0.3)
     
     # 2. ラベル別の文字数分布
     ax2 = axes[0, 1]
-    ax2.hist(label_lengths[0], bins=20, alpha=0.6, label='明確 (Label 0)', 
+    ax2.hist(label_lengths[0], bins=20, alpha=0.6, label='Clear (Label 0)', 
             color='#4CAF50', edgecolor='black')
-    ax2.hist(label_lengths[1], bins=20, alpha=0.6, label='曖昧 (Label 1)', 
+    ax2.hist(label_lengths[1], bins=20, alpha=0.6, label='Ambiguous (Label 1)', 
             color='#FF9800', edgecolor='black')
-    ax2.set_xlabel('文字数', fontsize=12)
-    ax2.set_ylabel('頻度', fontsize=12)
-    ax2.set_title('ラベル別 文字数分布', fontsize=14, fontweight='bold')
+    ax2.set_xlabel('Text Length (characters)', fontsize=12)
+    ax2.set_ylabel('Frequency', fontsize=12)
+    ax2.set_title('Text Length Distribution by Label', fontsize=14, fontweight='bold')
     ax2.legend()
     ax2.grid(axis='y', alpha=0.3)
     
@@ -144,21 +140,21 @@ def analyze_text_length(data_dict):
     for patch in bp['boxes']:
         patch.set_facecolor('#2196F3')
         patch.set_alpha(0.6)
-    ax3.set_ylabel('文字数', fontsize=12)
-    ax3.set_title('データセット別 文字数の箱ひげ図', fontsize=14, fontweight='bold')
+    ax3.set_ylabel('Text Length (characters)', fontsize=12)
+    ax3.set_title('Text Length Box Plot by Dataset', fontsize=14, fontweight='bold')
     ax3.grid(axis='y', alpha=0.3)
     
     # 4. 箱ひげ図（ラベル別）
     ax4 = axes[1, 1]
     data_for_box2 = [label_lengths[0], label_lengths[1]]
-    bp2 = ax4.boxplot(data_for_box2, labels=['明確 (Label 0)', '曖昧 (Label 1)'],
+    bp2 = ax4.boxplot(data_for_box2, labels=['Clear (Label 0)', 'Ambiguous (Label 1)'],
                       patch_artist=True, showmeans=True)
     bp2['boxes'][0].set_facecolor('#4CAF50')
     bp2['boxes'][1].set_facecolor('#FF9800')
     for patch in bp2['boxes']:
         patch.set_alpha(0.6)
-    ax4.set_ylabel('文字数', fontsize=12)
-    ax4.set_title('ラベル別 文字数の箱ひげ図', fontsize=14, fontweight='bold')
+    ax4.set_ylabel('Text Length (characters)', fontsize=12)
+    ax4.set_title('Text Length Box Plot by Label', fontsize=14, fontweight='bold')
     ax4.grid(axis='y', alpha=0.3)
     
     plt.tight_layout()
@@ -226,7 +222,7 @@ def analyze_frequent_words(data_dict):
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
     
     colors = ['#4CAF50', '#FF9800']
-    labels_names = ['明確 (Label 0)', '曖昧 (Label 1)']
+    labels_names = ['Clear (Label 0)', 'Ambiguous (Label 1)']
     
     for idx, label in enumerate([0, 1]):
         ax = axes[idx]
@@ -239,8 +235,8 @@ def analyze_frequent_words(data_dict):
             bars = ax.barh(range(len(words)), counts, color=colors[idx], alpha=0.8)
             ax.set_yticks(range(len(words)))
             ax.set_yticklabels(words, fontsize=11)
-            ax.set_xlabel('出現回数', fontsize=12)
-            ax.set_title(f'{labels_names[idx]} 頻出語 TOP10', 
+            ax.set_xlabel('Frequency', fontsize=12)
+            ax.set_title(f'{labels_names[idx]} - Top 10 Words', 
                         fontsize=14, fontweight='bold')
             ax.invert_yaxis()
             ax.grid(axis='x', alpha=0.3)
@@ -313,10 +309,10 @@ def analyze_tokenization(data_dict):
     for name, lengths in token_lengths.items():
         ax1.hist(lengths, bins=30, alpha=0.6, label=name.capitalize(), edgecolor='black')
     ax1.axvline(recommended_max_length, color='red', linestyle='--', linewidth=2,
-               label=f'推奨max_length ({recommended_max_length})')
-    ax1.set_xlabel('トークン数', fontsize=12)
-    ax1.set_ylabel('頻度', fontsize=12)
-    ax1.set_title('データセット別 トークン数分布', fontsize=14, fontweight='bold')
+               label=f'Recommended max_length ({recommended_max_length})')
+    ax1.set_xlabel('Token Length', fontsize=12)
+    ax1.set_ylabel('Frequency', fontsize=12)
+    ax1.set_title('Token Length Distribution by Dataset', fontsize=14, fontweight='bold')
     ax1.legend()
     ax1.grid(axis='y', alpha=0.3)
     
@@ -328,11 +324,11 @@ def analyze_tokenization(data_dict):
         ax2.plot(sorted_lengths, cumulative, label=name.capitalize(), linewidth=2)
     
     ax2.axvline(recommended_max_length, color='red', linestyle='--', linewidth=2,
-               label=f'95パーセンタイル ({recommended_max_length})')
+               label=f'95th percentile ({recommended_max_length})')
     ax2.axhline(95, color='gray', linestyle=':', alpha=0.5)
-    ax2.set_xlabel('トークン数', fontsize=12)
-    ax2.set_ylabel('累積パーセント (%)', fontsize=12)
-    ax2.set_title('トークン数の累積分布', fontsize=14, fontweight='bold')
+    ax2.set_xlabel('Token Length', fontsize=12)
+    ax2.set_ylabel('Cumulative Percentage (%)', fontsize=12)
+    ax2.set_title('Cumulative Token Length Distribution', fontsize=14, fontweight='bold')
     ax2.legend()
     ax2.grid(alpha=0.3)
     
