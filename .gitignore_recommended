@@ -88,9 +88,12 @@ test_small.jsonl
 *.bak
 *~
 
-# ログファイル
-*.log
 
-# テスト実行結果
-results_test/
-training_results.json
+
+
+
+
+
+
+
+

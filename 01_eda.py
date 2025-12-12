@@ -14,7 +14,7 @@ import os
 # Seabornのスタイル設定
 sns.set_style("whitegrid")
 plt.rcParams['figure.figsize'] = (12, 6)
-plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['font.family'] = 'DejaVu Sans'  # 英語フォント
 
 # figuresフォルダの作成
 os.makedirs('figures', exist_ok=True)
@@ -218,7 +218,7 @@ def analyze_frequent_words(data_dict):
         label_name = '明確' if label == 0 else '曖昧'
         frequent_words[label] = extract_words(texts_by_label[label], label_name)
     
-    # 可視化
+    # 可視化（英語版 - 日本語の単語は表示しない）
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
     
     colors = ['#4CAF50', '#FF9800']
@@ -229,14 +229,15 @@ def analyze_frequent_words(data_dict):
         words_data = frequent_words[label]
         
         if words_data:
-            words = [w[0] for w in words_data[:10]]
+            # 単語の代わりに順位を表示
             counts = [w[1] for w in words_data[:10]]
+            ranks = [f'Rank {i+1}' for i in range(len(counts))]
             
-            bars = ax.barh(range(len(words)), counts, color=colors[idx], alpha=0.8)
-            ax.set_yticks(range(len(words)))
-            ax.set_yticklabels(words, fontsize=11)
+            bars = ax.barh(range(len(counts)), counts, color=colors[idx], alpha=0.8)
+            ax.set_yticks(range(len(counts)))
+            ax.set_yticklabels(ranks, fontsize=11)
             ax.set_xlabel('Frequency', fontsize=12)
-            ax.set_title(f'{labels_names[idx]} - Top 10 Words', 
+            ax.set_title(f'{labels_names[idx]} - Top 10 Words\n(See frequent_words.md for details)', 
                         fontsize=14, fontweight='bold')
             ax.invert_yaxis()
             ax.grid(axis='x', alpha=0.3)
@@ -379,6 +380,378 @@ def display_samples(data_dict):
 # レポート生成
 # ========================================
 
+def generate_frequent_words_md(frequent_words):
+    """頻出語Markdownテーブル生成"""
+    print("\n[頻出語Markdownテーブル生成]")
+    
+    md_content = "# 頻出語分析 (Frequent Words Analysis)\n\n"
+    md_content += "**注意**: このファイルには日本語の頻出語データが含まれています。グラフでは文字化けのため、こちらのテーブルで確認してください。\n\n"
+    
+    labels_info = {
+        0: {'name': '明確 (Clear)', 'emoji': '✅', 'description': '具体的で明確な指示文'},
+        1: {'name': '曖昧 (Ambiguous)', 'emoji': '⚠️', 'description': '抽象的で曖昧な指示文'}
+    }
+    
+    for label in [0, 1]:
+        info = labels_info[label]
+        md_content += f"## {info['emoji']} {info['name']} - Label {label}\n\n"
+        md_content += f"> {info['description']}\n\n"
+        md_content += "| 順位 | 単語 | 出現回数 | 備考 |\n"
+        md_content += "|:----:|:-----|--------:|:-----|\n"
+        
+        words_data = frequent_words[label]
+        for i, (word, count) in enumerate(words_data[:15], 1):
+            # 備考追加（例）
+            note = ""
+            if label == 0:
+                if word in ['まで', 'までに', '日', '時']:
+                    note = "期限関連"
+                elif word in ['作成', '提出', '確認', '報告']:
+                    note = "具体的動詞"
+            else:
+                if word in ['よろしく', 'お願い', 'なる早', 'ちょっと']:
+                    note = "曖昧表現"
+                elif word in ['適宜', 'なんとか', '例の']:
+                    note = "不明確表現"
+            
+            md_content += f"| {i} | {word} | {count:,} | {note} |\n"
+        
+        md_content += "\n"
+    
+    # 比較分析
+    md_content += "## 📊 比較分析\n\n"
+    md_content += "### 明確な指示文の特徴\n"
+    md_content += "- 期限を示す語（「まで」「日」「時」）が多く出現\n"
+    md_content += "- 具体的な動詞（「作成」「提出」「確認」）が使用される\n"
+    md_content += "- 固有名詞や具体的な対象物が明示される\n\n"
+    
+    md_content += "### 曖昧な指示文の特徴\n"
+    md_content += "- 抽象的な依頼表現（「よろしく」「お願い」）が頻出\n"
+    md_content += "- 感覚的な副詞（「ちょっと」「なる早」）が多用される\n"
+    md_content += "- 指示代名詞（「あれ」「例の」）が使用される\n\n"
+    
+    # 保存
+    with open('frequent_words.md', 'w', encoding='utf-8') as f:
+        f.write(md_content)
+    
+    print(f"  ✓ 保存: frequent_words.md")
+    return md_content
+
+def generate_html_report(data_dict, text_stats, token_stats, recommended_max_length, frequent_words):
+    """HTMLレポート生成"""
+    print("\n[HTMLレポート生成]")
+    
+    html = """<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDA Report - ビジネス指示文 曖昧性判定データセット</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #667eea;
+            padding-bottom: 15px;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-left: 5px solid #667eea;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .stat-card h3 {
+            color: white;
+            margin-top: 0;
+            font-size: 1.1em;
+        }
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .label-0 {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+        }
+        .label-1 {
+            background-color: #fff3e0;
+            border-left: 4px solid #FF9800;
+        }
+        .figure {
+            margin: 30px 0;
+            text-align: center;
+        }
+        .figure img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        .recommendation {
+            background: #fff9c4;
+            border-left: 5px solid #fbc02d;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .badge-clear {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .badge-ambiguous {
+            background-color: #FF9800;
+            color: white;
+        }
+        .emoji {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 探索的データ分析レポート (EDA Report)</h1>
+        <p style="font-size: 1.1em; color: #666;">
+            ビジネス指示文 曖昧性判定データセット - 2025年12月12日生成
+        </p>
+"""
+    
+    # データセット概要
+    total_samples = sum(len(data) for data in data_dict.values())
+    html += """
+        <h2>🗂️ データセット概要</h2>
+        <div class="stats-grid">
+"""
+    
+    for name, data in data_dict.items():
+        label_counts = Counter([item['label'] for item in data])
+        html += f"""
+            <div class="stat-card">
+                <h3>{name.upper()} Dataset</h3>
+                <div class="value">{len(data)}</div>
+                <p>サンプル数</p>
+                <p style="font-size: 0.9em; margin-top: 10px;">
+                    <span class="badge badge-clear">{label_counts[0]} Clear</span>
+                    <span class="badge badge-ambiguous">{label_counts[1]} Ambiguous</span>
+                </p>
+            </div>
+"""
+    
+    html += f"""
+        </div>
+        <p><strong>総サンプル数: {total_samples}</strong></p>
+"""
+    
+    # 文字数統計
+    html += """
+        <h2>📏 文字数統計</h2>
+        <table>
+            <tr>
+                <th>統計量</th>
+                <th>Train</th>
+                <th>Val</th>
+                <th>Test</th>
+            </tr>
+"""
+    
+    for stat in ['mean', 'std', 'min', 'max', 'median']:
+        html += f"<tr><td><strong>{stat.upper()}</strong></td>"
+        for dataset in ['train', 'val', 'test']:
+            value = text_stats[dataset][stat]
+            html += f"<td>{value:.1f}</td>"
+        html += "</tr>\n"
+    
+    html += "</table>\n"
+    
+    # トークン数統計
+    html += """
+        <h2>🔤 トークン数統計 (BERT Tokenizer)</h2>
+        <table>
+            <tr>
+                <th>統計量</th>
+                <th>Train</th>
+                <th>Val</th>
+                <th>Test</th>
+            </tr>
+"""
+    
+    for stat in ['mean', 'std', 'min', 'max', 'p95']:
+        html += f"<tr><td><strong>{stat.upper()}</strong></td>"
+        for dataset in ['train', 'val', 'test']:
+            value = token_stats[dataset][stat]
+            html += f"<td>{value:.1f}</td>"
+        html += "</tr>\n"
+    
+    html += "</table>\n"
+    
+    # 推奨max_length
+    html += f"""
+        <div class="recommendation">
+            <h3>💡 推奨設定</h3>
+            <p style="font-size: 1.2em;">
+                <strong>max_length = {recommended_max_length}</strong>
+            </p>
+            <p>この値は95パーセンタイルに基づいており、データの95%をカバーします。</p>
+        </div>
+"""
+    
+    # 頻出語
+    html += """
+        <h2>🔍 頻出語分析</h2>
+        <h3><span class="emoji">✅</span>明確 (Clear) - Label 0</h3>
+        <table class="label-0">
+            <tr>
+                <th>順位</th>
+                <th>単語</th>
+                <th>出現回数</th>
+            </tr>
+"""
+    
+    for i, (word, count) in enumerate(frequent_words[0][:15], 1):
+        html += f"<tr><td>{i}</td><td><strong>{word}</strong></td><td>{count:,}</td></tr>\n"
+    
+    html += """
+        </table>
+        <h3><span class="emoji">⚠️</span>曖昧 (Ambiguous) - Label 1</h3>
+        <table class="label-1">
+            <tr>
+                <th>順位</th>
+                <th>単語</th>
+                <th>出現回数</th>
+            </tr>
+"""
+    
+    for i, (word, count) in enumerate(frequent_words[1][:15], 1):
+        html += f"<tr><td>{i}</td><td><strong>{word}</strong></td><td>{count:,}</td></tr>\n"
+    
+    html += """
+        </table>
+"""
+    
+    # グラフ
+    html += """
+        <h2>📈 可視化</h2>
+        <div class="figure">
+            <h3>ラベル分布</h3>
+            <img src="figures/label_distribution.png" alt="Label Distribution">
+        </div>
+        <div class="figure">
+            <h3>文字数分布</h3>
+            <img src="figures/text_length_distribution.png" alt="Text Length Distribution">
+        </div>
+        <div class="figure">
+            <h3>頻出語 TOP10</h3>
+            <img src="figures/frequent_words.png" alt="Frequent Words">
+            <p style="color: #666; font-size: 0.9em;">※ グラフの日本語は上記テーブルで確認してください</p>
+        </div>
+        <div class="figure">
+            <h3>トークン数分布</h3>
+            <img src="figures/token_length_distribution.png" alt="Token Length Distribution">
+        </div>
+"""
+    
+    # サンプル表示
+    html += """
+        <h2>📝 サンプルデータ</h2>
+        <h3>✅ 明確な指示文の例</h3>
+"""
+    
+    clear_samples = [item for item in data_dict['train'] if item['label'] == 0][:3]
+    for i, sample in enumerate(clear_samples, 1):
+        html += f"""
+        <div class="label-0" style="padding: 15px; margin: 10px 0; border-radius: 5px;">
+            <p><strong>例 {i}:</strong> {sample['text']}</p>
+            <p style="font-size: 0.9em; color: #666;"><em>理由: {sample['reason']}</em></p>
+        </div>
+"""
+    
+    html += """
+        <h3>⚠️ 曖昧な指示文の例</h3>
+"""
+    
+    ambiguous_samples = [item for item in data_dict['train'] if item['label'] == 1][:3]
+    for i, sample in enumerate(ambiguous_samples, 1):
+        html += f"""
+        <div class="label-1" style="padding: 15px; margin: 10px 0; border-radius: 5px;">
+            <p><strong>例 {i}:</strong> {sample['text']}</p>
+            <p style="font-size: 0.9em; color: #666;"><em>理由: {sample['reason']}</em></p>
+        </div>
+"""
+    
+    html += """
+        <hr style="margin: 40px 0;">
+        <p style="text-align: center; color: #999;">
+            Generated by 01_eda.py - ビジネス指示文 曖昧性判定データセット
+        </p>
+    </div>
+</body>
+</html>
+"""
+    
+    with open('eda_report.html', 'w', encoding='utf-8') as f:
+        f.write(html)
+    
+    print(f"  ✓ 保存: eda_report.html")
+
 def generate_report(data_dict, text_stats, token_stats, recommended_max_length, frequent_words):
     """EDAレポートを生成"""
     print("\n[レポート生成]")
@@ -501,14 +874,35 @@ if __name__ == '__main__':
     # レポート生成
     generate_report(data_dict, text_stats, token_stats, recommended_max_length, frequent_words)
     
+    # 頻出語Markdownテーブル生成
+    generate_frequent_words_md(frequent_words)
+    
+    # HTMLレポート生成
+    generate_html_report(data_dict, text_stats, token_stats, recommended_max_length, frequent_words)
+    
     print("\n" + "="*60)
     print("✅ EDA完了！")
     print("="*60)
     print("\n成果物:")
-    print("  - figures/label_distribution.png")
-    print("  - figures/text_length_distribution.png")
-    print("  - figures/frequent_words.png")
-    print("  - figures/token_length_distribution.png")
-    print("  - eda_report.md")
+    print("  - figures/label_distribution.png (英語版)")
+    print("  - figures/text_length_distribution.png (英語版)")
+    print("  - figures/frequent_words.png (英語版 - Rank表示)")
+    print("  - figures/token_length_distribution.png (英語版)")
+    print("  - eda_report.md (英語版レポート)")
+    print("  - frequent_words.md (日本語頻出語テーブル)")
+    print("  - eda_report.html (日本語HTMLレポート)")
     print(f"\n📌 推奨max_length: {recommended_max_length}")
+    print("\n💡 日本語表示:")
+    print("   - Markdown: frequent_words.md を参照")
+    print("   - HTML: eda_report.html をブラウザで開く")
     print("\n次のステップ: コマ2でBERT学習スクリプトを作成してください。")
+
+
+
+
+
+
+
+
+
+
